@@ -95,7 +95,9 @@ Ultimately I searched on two scales using `LUV` 3-channel HOG features plus spat
 ### Video Implementation
 
 ####1. Provide a link to your final video output.  Your pipeline should perform reasonably well on the entire project video (somewhat wobbly or unstable bounding boxes are ok as long as you are identifying the vehicles most of the time with minimal false positives.)
-Here's a [link to my video result](./project_video.mp4)
+Here's a link to my video result
+
+[![Video](http://img.youtube.com/vi/SDJunGr37JQ/0.jpg)](http://www.youtube.com/watch?v=SDJunGr37JQ "Video Title")
 
 
 ####2. Describe how (and identify where in your code) you implemented some kind of filter for false positives and some method for combining overlapping bounding boxes.
@@ -114,13 +116,18 @@ Here's an example result showing the heatmap from a series of frames of video, t
 
 ![alt text][image6]
 
-
-
 ---
 
 ###Discussion
 
 ####1. Briefly discuss any problems / issues you faced in your implementation of this project.  Where will your pipeline likely fail?  What could you do to make it more robust?
 
-Here I'll talk about the approach I took, what techniques I used, what worked and why, where the pipeline might fail and how I might improve it if I were going to pursue this project further.  
+Compared to project 2 and 3 where we can use neural network as feature extraction, this project requres us to be very explitcit about the features that we employ in the classifier. Thus, the most challenging aspect of this project to me is how to fine tune various parameters (color space, bins, window size, etc...) to obtain good features for the classifier.
 
+Fine tuning parameters depends a lot on a good validation strategy, especially considering the time series nature of the data. In the above implementation, I have overlooked the validation step, and I belive this is the reasons why, despite very high accuracy and precision, the classifier still ends up with a lot of false positive in the actual video.
+
+The most important improvement, I believe, is to have a more systematic validation step to fine tune parameters. 
+
+Another improvement would be the handling of multiple vehicles, especially when they block each other. `scipy.ndimage.measurements.label()` does take into account the time-dimension and assign separate labels if in a certain prior frame the vehicles do not block each other. Speed and location tracking could improve the this task significantly.
+
+Tracking vehicles going oposite direction could be important in certain situations (when the road is narrow and there is no barrier), and it requires a different strategy in terms of thresholding and time-integrating the heatmaps.
