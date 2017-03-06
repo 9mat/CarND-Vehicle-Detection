@@ -64,7 +64,11 @@ I did similar exercise for the other parameters and chose the following paramete
 
 ####3. Describe how (and identify where in your code) you trained a classifier using your selected HOG features (and color features if you used them).
 
-I trained a linear SVM using...
+In addition to the HOG, I also use color histogram and color bins from `HLS` color space as features for the classifier. The number of bins for the color histogram is set at 32 and the size for the spatial bins is set at `(16,16)`.
+
+To account for the effects of cropping (due to sliding windows, as discussed later) and changing lighting conditions, I agumented the data by randomly croping and change brightness of the existing images in the training set.
+
+I trained a linear SVM using `sklearn.svm.LinearSVC` class. I have also tried the general `sklearn.svm.SVC` classifier with different kernels. The `RBF` kernel is unacceptably slow. The `poly` kernel with `deg=3`gives very good performance (in both accuracy and precision) after using principle componenent ananlysis to extract top 500 features (accuracy and precision both above 99%). However it is still very slow. Therefore, in the end, I chose the linear kernel (and used `LinearSVC`) to achieve better speed with minimal compromise in accurary and/or precision (accuracy 97.7%, precision 96.4%, recall 99.1%).
 
 ###Sliding Window Search
 
@@ -82,7 +86,7 @@ I ended up having a total of 376 windows.
 
 ####2. Show some examples of test images to demonstrate how your pipeline is working.  What did you do to optimize the performance of your classifier?
 
-Ultimately I searched on two scales using YCrCb 3-channel HOG features plus spatially binned color and histograms of color in the feature vector, which provided a nice result.  Here are some example images:
+Ultimately I searched on two scales using `LUV` 3-channel HOG features plus spatially binned color and histograms of color in the feature vector, which provided a nice result.  Here are some example images:
 
 ![alt text][image5]
 ---
@@ -95,7 +99,13 @@ Here's a [link to my video result](./project_video.mp4)
 
 ####2. Describe how (and identify where in your code) you implemented some kind of filter for false positives and some method for combining overlapping bounding boxes.
 
-I recorded the positions of positive detections in each frame of the video.  From the positive detections I created a heatmap and then thresholded that map to identify vehicle positions.  I then used `scipy.ndimage.measurements.label()` to identify individual blobs in the heatmap.  I then assumed each blob corresponded to a vehicle.  I constructed bounding boxes to cover the area of each blob detected.  
+I recorded the positions of positive detections in each frame of the video.  From the positive detections I created a heatmap.
+
+As feature extraction is a very computationally expensive task, and the time spent for feature extraction is proportional to the number of search windows, it is essential to optimize the number of search windows. With the assumption that the video is a continuous stream of images from actual road, we can safely take as given that vehicles will gradually appear and disappear from the video over time, the their positions will remain stable one frame to the next. Thus, I only used the full set of 376 windows every 5 framesF For the rest of the frames, I only used the subset of windows that within 192 pixel from the center of the bounding boxes detected in the last frame. This trick increase the speed of the pipeline by about 3 times.
+
+To smooth out the noise due to false positives, I make use of 2 adjustments. First, I keep track of the last 8 heatmaps. Second, instead of doing the thresholding on the heatmaps, I do the thresholding on the integrated heatmaps over time. The integrated heatmaps is constructed as an exponential moving average with the update rate of 0.2 and the decay rate of 0.9, i.e  `integratedheatmap(t) = 0.2*heatmap(t-1) + 0.9*integratedheatmap(t-1)`
+
+The integrated heatmap will then be thresholded with the threshold being 2.  I then used `scipy.ndimage.measurements.label()` to identify individual blobs in the heatmap.  I then assumed each blob corresponded to a vehicle.  I constructed bounding boxes to cover the area of each blob detected.  
 
 Here's an example result showing the heatmap from a series of frames of video, the result of `scipy.ndimage.measurements.label()` and the bounding boxes then overlaid on the last frame of video:
 
