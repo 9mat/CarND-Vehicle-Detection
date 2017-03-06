@@ -15,14 +15,13 @@ The goals / steps of this project are the following:
 * Estimate a bounding box for vehicles detected.
 
 [//]: # (Image References)
+[notebook]: ./vehdect.ipynb
 [image1]: ./output_images/car_noncar.png
 [image2]: ./output_images/HOG.png
 [image3]: ./output_images/HOG_orient.png
 [image4]: ./output_images/windows.png
 [image5]: ./output_images/bboxes.png
 [image6]: ./output_images/heatmap_6frames.png
-[image7]: ./examples/labels_map.png
-[image8]: ./examples/output_bboxes.png
 [video1]: ./project_video.mp4
 
 ## [Rubric](https://review.udacity.com/#!/rubrics/513/view) Points
@@ -39,9 +38,9 @@ You're reading it!
 
 ####1. Explain how (and identify where in your code) you extracted HOG features from the training images.
 
-The code for this step is contained in the first code cell of the IPython notebook (or in lines # through # of the file called `some_file.py`).  
+The code for this step is contained in the 2<sup>nd</sup>, 5<sup>th</sup> and 6<sup>th</sup> code cell of the IPython notebook [`vehdect.ipynb`]([notebook]). The 2<sup>nd</sup> code cell reads the data and splits them into training set and test set. The 5<sup>th</sup> code cell augments the training set by random cropping and adding random brightness to the existing images. The 6<sup>the</sup> code cell implements feature extration, inlcuding the `hog()` function that extract HOG feature using `skimage.feature` module and `hogcv` function which does the same thing bu using `HOGDescriptor` from `opencv` module. `skimage.feature.hog` is used for visualization purpose, and `opencv`'s `HOGDescriptor` is used for actual classification as it is substiantially faster.
 
-I started by reading in all the `vehicle` and `non-vehicle` images.  Here is an example of one of each of the `vehicle` and `non-vehicle` classes:
+I started by reading in all the `vehicle` and `non-vehicle` images (the 2<sup>nd</sup> ode code).  Here is an example of one of each of the `vehicle` and `non-vehicle` classes:
 
 ![alt text][image1]
 
@@ -65,6 +64,8 @@ I did similar exercise for the other parameters and chose the following paramete
 
 ####3. Describe how (and identify where in your code) you trained a classifier using your selected HOG features (and color features if you used them).
 
+Feature extraction is implemented in the 6<sup>th</sup> code cell of the notebook [`vehdect.ipynb`]([notebook]).
+
 In addition to the HOG, I also use color histogram and color bins from `HLS` color space as features for the classifier. The number of bins for the color histogram is set at 32 and the size for the spatial bins is set at `(16,16)`.
 
 To account for the effects of cropping (due to sliding windows, as discussed later) and changing lighting conditions, I agumented the data by randomly croping and change brightness of the existing images in the training set.
@@ -74,6 +75,8 @@ I trained a linear SVM using `sklearn.svm.LinearSVC` class. I have also tried th
 ###Sliding Window Search
 
 ####1. Describe how (and identify where in your code) you implemented a sliding window search.  How did you decide what scales to search and how much to overlap windows?
+
+The task decribed in this section is implemented in the 11<sup>th</sup>, 12<sup>th</sup> and 13<sup>th</sup> code cells of the notebook [`vehdect.ipynb`]([notebook]). The 11<sup>th</sup> code cell defines the function `slide_window` that constructa list of windows based on the size of the window and the region of the image that they lie in. The 12<sup>th</sup> code cell defines the actual list of windows that will be used in the pipeline.
 
 I used 4 different window sizes to capture cars at different positions. The 4 sizes are `192, 128, 96, 64`. In the figure below, the `192`-windows are drawn in red, `128`-windows in green, `96`-windows in blue and `64`-windows in purple.
 
@@ -99,8 +102,9 @@ Here's a link to my video result
 
 [![Video](http://img.youtube.com/vi/SDJunGr37JQ/0.jpg)](http://www.youtube.com/watch?v=SDJunGr37JQ "Video Title")
 
-
 ####2. Describe how (and identify where in your code) you implemented some kind of filter for false positives and some method for combining overlapping bounding boxes.
+
+I define a class `History` in the 15<sup>th</sup> coce cell of the notebook [`vehdect.ipynb`]([notebook]) to keep track of the heatmaps and filter out false positives by employing various techniques described below.
 
 I recorded the positions of positive detections in each frame of the video.  From the positive detections I created a heatmap.
 
@@ -130,4 +134,4 @@ The most important improvement, I believe, is to have a more systematic validati
 
 Another improvement would be the handling of multiple vehicles, especially when they block each other. `scipy.ndimage.measurements.label()` does take into account the time-dimension and assign separate labels if in a certain prior frame the vehicles do not block each other. Speed and location tracking could improve the this task significantly.
 
-Tracking vehicles going oposite direction could be important in certain situations (when the road is narrow and there is no barrier), and it requires a different strategy in terms of thresholding and time-integrating the heatmaps.
+Tracking vehicles going opposite direction could be important in certain situations (when the road is narrow and there is no barrier), and it requires a different strategy in terms of thresholding and time-integrating the heatmaps.
