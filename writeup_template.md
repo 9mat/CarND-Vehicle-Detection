@@ -38,13 +38,13 @@ You're reading it!
 
 ####1. Explain how (and identify where in your code) you extracted HOG features from the training images.
 
-The code for this step is contained in the 2<sup>nd</sup>, 5<sup>th</sup> and 6<sup>th</sup> code cell of the IPython notebook [`vehdect.ipynb`]([notebook]). The 2<sup>nd</sup> code cell reads the data and splits them into training set and test set. The 5<sup>th</sup> code cell augments the training set by random cropping and adding random brightness to the existing images. The 6<sup>the</sup> code cell implements feature extration, inlcuding the `hog()` function that extract HOG feature using `skimage.feature` module and `hogcv` function which does the same thing bu using `HOGDescriptor` from `opencv` module. `skimage.feature.hog` is used for visualization purpose, and `opencv`'s `HOGDescriptor` is used for actual classification as it is substiantially faster.
+The code for this step is contained in the 2<sup>nd</sup>, 5<sup>th</sup> and 6<sup>th</sup> code cell of the IPython notebook [`vehdect.ipynb`]([notebook]). The 2<sup>nd</sup> code cell reads the data and splits them into training set and test set. The 5<sup>th</sup> code cell augments the training set by random cropping and adding random brightness to the existing images. The 6<sup>th</sup> code cell implements feature extraction, inlcuding the `hog()` function that extractsHOG features using `skimage.feature` module, and `hogcv()` function which does the same thing but using `HOGDescriptor` from `opencv` module. `skimage.feature.hog` is used for visualization purposes, and `opencv`'s `HOGDescriptor` is used for actual classification, as the later is substiantially faster.
 
 I started by reading in all the `vehicle` and `non-vehicle` images (the 2<sup>nd</sup> ode code).  Here is an example of one of each of the `vehicle` and `non-vehicle` classes:
 
 ![alt text][image1]
 
-I then explored different color spaces and different `skimage.hog()` parameters (`orientations`, `pixels_per_cell`, and `cells_per_block`).  I grabbed random images from each of the two classes and displayed them to get a feel for what the `skimage.hog()` output looks like.
+I then explored different color spaces and different `hog()` parameters (`orientations`, `pixels_per_cell`, and `cells_per_block`).  I grabbed random images from each of the two classes and displayed them to get a feel for what the `hog()` output looks like.
 
 Here is an example using the  HOG parameters of `orientations=12`, `pixels_per_cell=(8, 8)` and `cells_per_block=(1, 1)`on three color spaces `LUV`, `BGR` and `YCrCb`
 
@@ -53,12 +53,12 @@ Here is an example using the  HOG parameters of `orientations=12`, `pixels_per_c
 ####2. Explain how you settled on your final choice of HOG parameters.
 
 ##### Color space
-As shown in the example above, `BGR` does not seem to differentiate well between cars and non-cars. All three channels of `LUV` and `YCrCb` show clear distintion between cars and non-cars, but the information seems to be substitution to each other (specially the `L` channel looks very similar to the `Y` channel, and the `UV` channels look very similar to the `CrCb` channels). As a result, and also due to computing time constraint, I have chosen only one of them (the `LUV` color space) for the `HOG` features used in the eventual classifier.
+As shown in the example above, `BGR` does not seem to differentiate well between cars and non-cars. All three channels of `LUV` and `YCrCb` show clear distintion between cars and non-cars, but the information seems to be substitute to each other (specifically, the `L` channel looks very similar to the `Y` channel, and the `UV` channels look very similar to the `CrCb` channels). As a result, and also due to computing time constraint, I have decided to use only one of them (the `LUV` color space) for the `HOG` features as an input to the eventual classifier.
 
 ##### Parameters
-I tried different sets of parameters to choose one that can capture as much information from HOG as possible without incurring too much computational and memory cost in terms of number of extracted features. For example the following figure shows the HOG visualization whne increase the number of orientation bins from 8 to 12 and to 16. There is some information gain from increasing `orient` to 12, indicated by a clearer shaped gradient of `HOG` with `orient=12` compared to when `orient=8`. However, goiing from `orient=12` to `orient=16` does not make any noticable change, while resulting in an increase of 30% in the number of features extracted. Eventually, I have chosen `orient=12` in the eventual classifier.
+I tried different sets of parameters and choose one that can capture as much information from HOG as possible without incurring too much computational and memory cost in terms of number of extracted features. For example the following figure shows the HOG visualization when we increase the number of orientation bins from 8 to 12 and to 16. There is some information gain from increasing `orient` to 12, indicated by a clearer shaped gradient of `HOG` with `orient=12` compared to the case when `orient=8`. However, going from `orient=12` to `orient=16` does not show any noticable change, while resulting in an increase of 30% in the number of features extracted. Eventually, I have chosen `orient=12`.
 
-I did similar exercise for the other parameters and chose the following parameter combination: `orient=12, pixels_per_cell=(8,8), cells_per_block=(1,1)`.
+I did similar exercise for the other parameters and chose the following combination: `orient=12, pixels_per_cell=(8,8), cells_per_block=(1,1)`.
 
 ![alt text][image3]
 
@@ -66,21 +66,21 @@ I did similar exercise for the other parameters and chose the following paramete
 
 Feature extraction is implemented in the 6<sup>th</sup> code cell of the notebook [`vehdect.ipynb`]([notebook]).
 
-In addition to the HOG, I also use color histogram and color bins from `HLS` color space as features for the classifier. The number of bins for the color histogram is set at 32 and the size for the spatial bins is set at `(16,16)`.
+In addition to the HOG, I also use color histogram and spatial binned color from `HLS` color space as features for the classifier. The number of bins for the color histogram is set at 32 and the size for the spatial bins is set at `(16,16)`.
 
 To account for the effects of cropping (due to sliding windows, as discussed later) and changing lighting conditions, I agumented the data by randomly croping and change brightness of the existing images in the training set.
 
-I trained a linear SVM using `sklearn.svm.LinearSVC` class. I have also tried the general `sklearn.svm.SVC` classifier with different kernels. The `RBF` kernel is unacceptably slow. The `poly` kernel with `deg=3`gives very good performance (in both accuracy and precision) after using principle componenent ananlysis to extract top 500 features (accuracy and precision both above 99%). However it is still very slow. Therefore, in the end, I chose the linear kernel (and used `LinearSVC`) to achieve better speed with minimal compromise in accurary and/or precision (accuracy 97.7%, precision 96.4%, recall 99.1%).
+I trained a linear SVM using `sklearn.svm.LinearSVC` class. I have also tried the general `sklearn.svm.SVC` classifier with different kernels. The `RBF` kernel is unacceptably slow. The `poly` kernel with `deg=3`gives very good performance (in both accuracy and precision) after using principle componenent ananlysis to extract the top 500 latern features (accuracy and precision are both above 99%). However it is still very slow. Therefore, in the end, I chose the linear kernel (and used `LinearSVC`) instead to achieve better speed with minimal compromise in accurary and/or precision (accuracy 97.7%, precision 96.4%, recall 99.1%).
 
 ###Sliding Window Search
 
 ####1. Describe how (and identify where in your code) you implemented a sliding window search.  How did you decide what scales to search and how much to overlap windows?
 
-The task decribed in this section is implemented in the 11<sup>th</sup>, 12<sup>th</sup> and 13<sup>th</sup> code cells of the notebook [`vehdect.ipynb`]([notebook]). The 11<sup>th</sup> code cell defines the function `slide_window` that constructa list of windows based on the size of the window and the region of the image that they lie in. The 12<sup>th</sup> code cell defines the actual list of windows that will be used in the pipeline.
+The task decribed in this section is implemented in the 11<sup>th</sup>, 12<sup>th</sup> and 13<sup>th</sup> code cells of the notebook [`vehdect.ipynb`]([notebook]). The 11<sup>th</sup> code cell defines the function `slide_window()` that constructs list of windows based on the size of the window and the region of the image that they lie in. The 12<sup>th</sup> code cell defines the actual list of windows that will be used in the pipeline.
 
 I used 4 different window sizes to capture cars at different positions. The 4 sizes are `192, 128, 96, 64`. In the figure below, the `192`-windows are drawn in red, `128`-windows in green, `96`-windows in blue and `64`-windows in purple.
 
-The windows only cover the bottom third of the image. The sky and scenery in the top two-thirds, as will the very bottom 100 pixels will be ignored as they contain no relevant information to detect vehicles. Moreover, as cars will appear larger when they are near, and smaller when they are far apart, the bigger windows will only cover the very bottom of the chosen region, while the smaller windows will only cover the top portion of the chosen region.
+These windows only cover the bottom third of the image. The sky and scenery in the top two-thirds, as well as the very bottom 100 pixels, will be ignored because they contain no relevant information to detect vehicles. Moreover, as cars appear larger when they are near, and smaller when they are far apart, the bigger windows will only cover the very bottom of the chosen region, while the smaller windows will only cover the top portion of the chosen region.
 
 I used an overlapping of `0.75` for the three bigger windows, and `0.5` overlapping for the `64`-windows. The reason for smaller overlapping is due to computing time contraints. `64`-windows are the most numeruous, due to their small size, thus a small increase in the overlapping rate will increase the number of windows significantly. Moreoever, they cover regions far away from the driver, and hence less important compared to the other set of windows.
 
@@ -126,12 +126,12 @@ Here's an example result showing the heatmap from a series of frames of video, t
 
 ####1. Briefly discuss any problems / issues you faced in your implementation of this project.  Where will your pipeline likely fail?  What could you do to make it more robust?
 
-Compared to project 2 and 3 where we can use neural network as feature extraction, this project requres us to be very explitcit about the features that we employ in the classifier. Thus, the most challenging aspect of this project to me is how to fine tune various parameters (color space, bins, window size, etc...) to obtain good features for the classifier.
+Compared to project 2 and 3 where we can use neural network as feature extraction, this project requires us to be very explitcit about the features that we employ in the classifier. Thus, the most challenging aspect of this project to me is how to fine tune various parameters (color space, bins, window size, etc...) to obtain good features for the classifier.
 
-Fine tuning parameters depends a lot on a good validation strategy, especially considering the time series nature of the data. In the above implementation, I have overlooked the validation step, and I belive this is the reasons why, despite very high accuracy and precision, the classifier still ends up with a lot of false positive in the actual video.
+Fine tuning parameters depends a lot on a good validation strategy, especially considering the time series nature of the data. In the above implementation, I have overlooked the validation step, and I believe this is the reasons why, despite very high accuracy and precision in the training and test set, the classifier still ends up with a lot of false positives in the actual video.
 
 The most important improvement, I believe, is to have a more systematic validation step to fine tune parameters. 
 
-Another improvement would be the handling of multiple vehicles, especially when they block each other. `scipy.ndimage.measurements.label()` does take into account the time-dimension and assign separate labels if in a certain prior frame the vehicles do not block each other. Speed and location tracking could improve the this task significantly.
+Another improvement would be better handling of multiple vehicles, especially when they block each other. `scipy.ndimage.measurements.label()` does take into account the time dimension and assign separate labels if in a certain prior frame the vehicles do not block each other. Speed and location tracking could also be used to improve this task significantly.
 
 Tracking vehicles going opposite direction could be important in certain situations (when the road is narrow and there is no barrier), and it requires a different strategy in terms of thresholding and time-integrating the heatmaps.
